@@ -6,17 +6,18 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from surrealdb import Surreal
 from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 async def import_tables():
     """migrate database from pg to surreal"""
+    config = dotenv_values(".env")
     postgres_host = os.getenv("POSTGRES_HOST")
     if postgres_host is None:
         print("Loading .env file")
         load_dotenv()
     start_time = time.monotonic()
-    print(f"Using postgres host: {postgres_host}")
     conn = psycopg2.connect(
-        host=postgres_host,
+        host=os.getenv("POSTGRES_HOST"),
         port=os.getenv("POSTGRES_PORT"),
         database=os.getenv("POSTGRES_DATABASE"),
         user=os.getenv("POSTGRES_USER"),

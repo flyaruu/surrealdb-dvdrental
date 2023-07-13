@@ -29,3 +29,4 @@ jobs:
       - run: pip install pylint
       - run: pylint migrate.py
       - run: python migrate.py
+      - run: docker commit
