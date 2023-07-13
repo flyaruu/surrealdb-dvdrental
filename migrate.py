@@ -9,10 +9,12 @@ from dotenv import load_dotenv
 
 async def import_tables():
     """migrate database from pg to surreal"""
-    load_dotenv()
+    postgres_host = os.getenv("POSTGRES_HOST")
+    if postgres_host is None:
+        load_dotenv()
     start_time = time.monotonic()
     conn = psycopg2.connect(
-        host=os.getenv("POSTGRES_HOST"),
+        host=postgres_host,
         port=os.getenv("POSTGRES_PORT"),
         database=os.getenv("POSTGRES_DATABASE"),
         user=os.getenv("POSTGRES_USER"),
