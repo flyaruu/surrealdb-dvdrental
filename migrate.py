@@ -10,7 +10,6 @@ from dotenv import dotenv_values
 
 async def import_tables():
     """migrate database from pg to surreal"""
-    config = dotenv_values(".env")
     postgres_host = os.getenv("POSTGRES_HOST")
     if postgres_host is None:
         print("Loading .env file")
