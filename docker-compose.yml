@@ -1,0 +1,15 @@
+version: '2'
+services:
+  customer:
+    image: floodplain/dvdrental:latest
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    command: start --log trace --user root --pass root
+    environment:
+      SOMETHING: something
+    ports:
+      - 8000:8000
