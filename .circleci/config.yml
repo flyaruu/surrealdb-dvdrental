@@ -9,7 +9,7 @@ jobs:
           SURREAL_PASSWORD: root
           SURREAL_NAMESPACE: myns
           SURREAL_DATABASE: mydb
-          POSTGRES_HOST: localhost
+          POSTGRES_HOST: postgres
           POSTGRES_PORT: 5432
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: mysecretpassword
