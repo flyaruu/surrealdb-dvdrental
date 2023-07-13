@@ -21,7 +21,10 @@ async def import_tables():
     # cur = conn.cursor()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     async with Surreal(os.getenv("SURREAL_URL")) as dest_db:
-        await dest_db.signin({"user": os.getenv("SURREAL_USER"), "pass": os.getenv("SURREAL_PASSWORD")})
+        await dest_db.signin({
+            "user": os.getenv("SURREAL_USER"),
+            "pass": os.getenv("SURREAL_PASSWORD")
+        })
         await dest_db.use(os.getenv("SURREAL_NAMESPACE"), os.getenv("SURREAL_DATABASE"))
         await import_countries(cur,dest_db)
         await import_cities(cur,dest_db)
