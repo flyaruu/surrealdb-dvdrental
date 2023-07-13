@@ -1,4 +1,5 @@
 '''Migrate the classic dvdrental database to a (hopefully) sensible datamodel in SurrealDB'''
+import os
 import time
 import asyncio
 import psycopg2
@@ -11,17 +12,17 @@ async def import_tables():
     load_dotenv()
     start_time = time.monotonic()
     conn = psycopg2.connect(
-        host="localhost",
-        port=5433,
-        database="dvdrental",
-        user="postgres",
-        password="mysecretpassword")
-
+        host=os.getenv("POSTGRES_HOST"),
+        port=os.getenv("POSTGRES_PORT"),
+        database=os.getenv("POSTGRES_DATABASE"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD")
+    )
     # cur = conn.cursor()
     cur = conn.cursor(cursor_factory=RealDictCursor)
-    async with Surreal("ws://localhost:8000/rpc") as dest_db:
-        await dest_db.signin({"user": "root", "pass": "root"})
-        await dest_db.use("myns", "mydb")
+    async with Surreal(os.getenv("SURREAL_URL")) as dest_db:
+        await dest_db.signin({"user": os.getenv("SURREAL_USER"), "pass": os.getenv("SURREAL_PASSWORD")})
+        await dest_db.use(os.getenv("SURREAL_NAMESPACE"), os.getenv("SURREAL_DATABASE"))
         await import_countries(cur,dest_db)
         await import_cities(cur,dest_db)
         await import_address(cur,dest_db)
@@ -245,9 +246,10 @@ async def import_rental(cur: RealDictCursor, dest_db: Surreal):
                 return_date=type::datetime($return_date)
         """
         await dest_db.query(query, record)
-        query = f"RELATE rental:{record['rental_id']}->customer_rental->customer:{record['customer_id']}"
+        rental_id = record['rental_id']
+        query = f"RELATE rental:{rental_id}->customer_rental->customer:{record['customer_id']}"
         await dest_db.query(query)
-        query = f"RELATE rental:{record['rental_id']}->inventory_rental->inventory:{record['inventory_id']}"
+        query = f"RELATE rental:{rental_id}->inventory_rental->inventory:{record['inventory_id']}"
         await dest_db.query(query)
 
 async def import_object(dest_db: Surreal, table: str, key: str, data: dict):

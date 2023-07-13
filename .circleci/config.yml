@@ -1,0 +1,31 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: cimg/python:3.11.4
+        environment:
+          SURREAL_URL: ws://localhost:8000/rpc
+          SURREAL_USER: root
+          SURREAL_PASSWORD: root
+          SURREAL_NAMESPACE: myns
+          SURREAL_DATABASE: mydb
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mysecretpassword
+          POSTGRES_DATABASE: dvdrental          
+      - image: surrealdb/surrealdb:latest
+        name: surreal
+        command: start --log trace --user root --pass root
+      - image: floodplain/dvdrental:latest
+        name: postgres
+        environment:
+          POSTGRES_PASSWORD: mysecretpassword
+
+    steps:
+      - checkout
+      - run: python --version
+      - run: pip install -r requirements.txt
+      - run: pip install pylint
+      - run: pylint migrate.py
+      - run: python migrate.py
