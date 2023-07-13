@@ -3,12 +3,12 @@ import time
 import asyncio
 import psycopg2
 from psycopg2.extras import RealDictCursor
-
 from surrealdb import Surreal
+from dotenv import load_dotenv
 
 async def import_tables():
     """migrate database from pg to surreal"""
-
+    load_dotenv()
     start_time = time.monotonic()
     conn = psycopg2.connect(
         host="localhost",
@@ -102,40 +102,37 @@ async def link_category(cur: RealDictCursor, dest_db: Surreal):
     cur.execute("select * from film_category")
     for row in cur.fetchall():
         await dest_db.query(
-            'UPDATE type::thing("film",$film_id) SET categories += type::thing("category",$category_id)'
+            '''UPDATE type::thing("film",$film_id) 
+                SET categories += type::thing("category",$category_id)
+            '''
             ,{
                 'film_id':row['film_id'],
-                'category_id':"category:{}".format(row['category_id'])
+                # 'category_id':"category:{}".format(row['category_id'])
+                'category_id':f'category:{row["category_id"]}'
             }
         )
 
 async def link_actor(cur: RealDictCursor, dest_db: Surreal):
+    '''Associate movies and actors (bidirectionally)'''
     cur.execute("select * from film_actor")
     for row in cur.fetchall():
         # is this necessary?
-        # print ("associating {} with {}".format(row['film_id'],row['actor_id']))
-        query = "RELATE actor:{}->played_in->film:{}".format(row['actor_id'],row['film_id'])
+        # + I didn't manage to properly use parameters, now I'm just stitching the query
+        # together, which might introduce a vulnerability for SQL-injection like attacks
+        query = f"RELATE actor:{row['actor_id']}->played_in->film:{row['film_id']}"
         await dest_db.query(query)
-        query = "RELATE film:{}->features->actor:{}".format(row['film_id'],row['actor_id'])
+        query = f"RELATE film:{row['film_id']}->features->actor:{row['actor_id']}"
         await dest_db.query(query)
-
-        # await db.query(
-        # 'RELATE actor:$actor_id->played_in->film:$film_id'
-        #     ,{
-        #         'film_id':str(row['film_id']),
-        #         'actor_id':str(row['actor_id'])
-        #     }
-        # )
-        #     # """RELATE type::thing("actor",$actor_id)->played_in->type::thing("film",$film_id)"""
 
 async def import_staff(cur: RealDictCursor, dest_db: Surreal):
+    '''import staff table, use record pointers to address'''
     await dest_db.delete("staff")
     cur.execute("select * from staff")
     for row in cur.fetchall():
         record = {'staff_id': row['staff_id'],
                   'first_name': row['first_name'],
                   'last_name': row['last_name'],
-                  'address_id': "address:{}".format(row['address_id']),
+                  'address_id': f"address:{row['address_id']}",
                   'email': row['email'],
                   'active': row['active'],
                   'username': row['username'],
@@ -145,17 +142,19 @@ async def import_staff(cur: RealDictCursor, dest_db: Surreal):
         await import_object(dest_db,'staff',row['staff_id'], record)
 
 async def import_store(cur: RealDictCursor, dest_db: Surreal):
+    '''import staff table, use record pointers to address + staff'''
     await dest_db.delete("store")
     cur.execute("select * from store")
     for row in cur.fetchall():
         record = {'store_id': row['store_id'],
-                  'manager_staff_id': "staff:{}".format(row['manager_staff_id']),
-                  'address_id': "address:{}".format(row['address_id']),
+                  'manager_staff_id': f"staff:{row['manager_staff_id']}",
+                  'address_id': f"address:{row['address_id']}",
                   'last_update': row['last_update'].isoformat()
                   }
         await import_object(dest_db,'store',row['store_id'], record)
 
 async def import_customers(cur: RealDictCursor, dest_db: Surreal):
+    '''import customer table, use record pointers to address'''
     await dest_db.delete("customer")
     cur.execute("select * from customer")
     for row in cur.fetchall():
@@ -163,13 +162,14 @@ async def import_customers(cur: RealDictCursor, dest_db: Surreal):
                   'first_name': row['first_name'],
                   'last_name': row['last_name'],
                   'email': row['email'],
-                  'address_id': "address:{}".format(row['address_id']),
+                  'address_id': f"address:{row['address_id']}",
                   'create_date': row['create_date'].isoformat(),
                   'last_update': row['last_update'].isoformat()
                   }
         await import_object(dest_db,'customer',row['customer_id'], record)
 
 async def import_countries(cur: RealDictCursor, dest_db: Surreal):
+    '''import country table'''
     await dest_db.delete("country")
     cur.execute("select * from country")
     for row in cur.fetchall():
@@ -180,13 +180,20 @@ async def import_countries(cur: RealDictCursor, dest_db: Surreal):
         await import_object(dest_db,'country',row['country_id'], record)
 
 async def import_cities(cur: RealDictCursor, dest_db: Surreal):
+    '''import city table, use record pointer to country'''
     await dest_db.delete("city")
     cur.execute("select * from city")
     for row in cur.fetchall():
-        record = {'city_id': row['city_id'], 'city': row['city'], 'last_update': row['last_update'].isoformat(), 'country_id': "country:{}".format(row['country_id'])}
+        record = {
+            'city_id': row['city_id'],
+            'city': row['city'],
+            'last_update': row['last_update'].isoformat(),
+            'country_id': f"country:{row['country_id']}"
+        }
         await import_object(dest_db,'city',row['city_id'], record)
 
 async def import_address(cur: RealDictCursor, dest_db: Surreal):
+    '''import address table, use record pointer to city'''
     await dest_db.delete("address")
     cur.execute("select * from address")
     for row in cur.fetchall():
@@ -194,13 +201,14 @@ async def import_address(cur: RealDictCursor, dest_db: Surreal):
                 'address': row['address'], 
                 'address2': row['address2'], 
                 'district': row['district'], 
-                'city_id': "city:{}".format(row['city_id']),
+                'city_id': f"city:{row['city_id']}",
                 'postal_code': row['postal_code'], 
                 'phone': row['phone'], 
                 'last_update': row['last_update'].isoformat()}
         await import_object(dest_db,'address',row['address_id'], record)
 
 async def import_inventory(cur: RealDictCursor, dest_db: Surreal):
+    '''import inventory table, relate to film and store using graph edges'''
     await dest_db.delete("inventory")
     cur.execute("select * from inventory")
     for row in cur.fetchall():
@@ -208,20 +216,21 @@ async def import_inventory(cur: RealDictCursor, dest_db: Surreal):
                    'last_update': row['last_update'].isoformat()
                    }
         await import_object(dest_db,'inventory',row['inventory_id'], record)
-        query = "RELATE inventory:{}->film_instance->film:{}".format(row['inventory_id'],row['film_id'])
+        query = f"RELATE inventory:{row['inventory_id']}->film_instance->film:{row['film_id']}"
         await dest_db.query(query)
-        query = "RELATE inventory:{}->in_store->store:{}".format(row['inventory_id'],row['store_id'])
+        query = f"RELATE inventory:{row['inventory_id']}->in_store->store:{row['store_id']}"
         await dest_db.query(query)
 
 async def import_rental(cur: RealDictCursor, dest_db: Surreal):
+    '''import rentals, relate to inventory and customer using graph edges'''
     await dest_db.delete("rental")
     cur.execute("select * from rental")
     for row in cur.fetchall():
         return_date = row['return_date']
-        if (return_date != None):
+        if return_date is not None:
             return_date = return_date.isoformat()
         rental_date = row['rental_date']
-        if (rental_date != None):
+        if rental_date is not None:
             rental_date = rental_date.isoformat()
         record = {'rental_id': row['rental_id'],
                    'customer_id': row['customer_id'],
@@ -230,19 +239,20 @@ async def import_rental(cur: RealDictCursor, dest_db: Surreal):
                    'return_date': return_date,
                    'last_update': row['last_update'].isoformat(),
                    }
-        query = """CREATE type::thing("rental",$rental_id) SET last_update = type::datetime($last_update),
-             rental_date=type::datetime($rental_date),
-             return_date=type::datetime($return_date)
+        query = """CREATE type::thing("rental",$rental_id)
+            SET last_update = type::datetime($last_update),
+                rental_date=type::datetime($rental_date),
+                return_date=type::datetime($return_date)
         """
         await dest_db.query(query, record)
-        query = "RELATE rental:{}->customer_rental->customer:{}".format(record["rental_id"],record["customer_id"])
+        query = f"RELATE rental:{record['rental_id']}->customer_rental->customer:{record['customer_id']}"
         await dest_db.query(query)
-        query = "RELATE rental:{}->inventory_rental->inventory:{}".format(record["rental_id"],record["inventory_id"])
+        query = f"RELATE rental:{record['rental_id']}->inventory_rental->inventory:{record['inventory_id']}"
         await dest_db.query(query)
 
 async def import_object(dest_db: Surreal, table: str, key: str, data: dict):
-    surreal_id = '{}:{}'.format(table,key)
-    await dest_db.create(surreal_id,data)
+    '''shortcut for import. bit silly now'''
+    await dest_db.create(f'{table}:{key}',data)
 
 if __name__ == "__main__":
     asyncio.run(import_tables())
