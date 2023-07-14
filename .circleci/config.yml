@@ -32,4 +32,5 @@ jobs:
       - run: pylint --fail-under=8 migrate.py
       - run: python migrate.py
       - run: docker ps
+      - run: env
       - run: docker commit surreal flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
