@@ -16,7 +16,7 @@ jobs:
           POSTGRES_DATABASE: dvdrental          
       - image: surrealdb/surrealdb:latest
         name: surreal
-        command: start --log trace --user root --pass root
+        command: start --log warn --user root --pass root
       - image: floodplain/dvdrental:latest
         name: postgres
         environment:
@@ -24,7 +24,8 @@ jobs:
 
     steps:
       - setup_remote_docker:
-          version: 20.10.14    
+          version: 20.10.14
+      - run: docker run -d --name surreal -p 8001:8000 surrealdb/surrealdb:latest start --log trace --user root --pass root
       - checkout
       - run: python --version
       - run: pip install -r requirements.txt
@@ -32,5 +33,4 @@ jobs:
       - run: pylint --fail-under=8 migrate.py
       - run: python migrate.py
       - run: docker ps
-      - run: env
       - run: docker commit surreal flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
