@@ -25,7 +25,7 @@ jobs:
     steps:
       - setup_remote_docker:
           version: 20.10.14
-      - run: docker run -d --name surreal -p 8001:8000 surrealdb/surrealdb:latest start --log trace --user root --pass root
+      - run: docker run -d --name surreal -p 8001:8000 surrealdb/surrealdb:latest start --log trace --user root --pass root file://database.db
       - checkout
       - run: python --version
       - run: pip install -r requirements.txt
