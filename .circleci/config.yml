@@ -18,11 +18,12 @@ jobs:
         name: postgres
         environment:
           POSTGRES_PASSWORD: mysecretpassword
-
+      - image: surrealdb/surrealdb:latest
+        name: surreal
+        command: start --log trace --user root --pass root --pass root file://database.db
     steps:
       - setup_remote_docker:
           version: 20.10.14
-      - run: docker run -d --name surreal -p 8000:8000 surrealdb/surrealdb:latest start --log trace --user root --pass root file://database.db
       - checkout
       - run: python --version
       - run: pip install -r requirements.txt
@@ -31,8 +32,9 @@ jobs:
       - run: docker ps -a
       - run: docker ps -q
       - run: python migrate.py
-      - run: docker stop surreal
-      - run: docker commit surreal flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
+      - run: export SURREAL_CONTAINER=$(docker ps | grep surrealdb:latest |  awk '{ print $1 }')
+      - run: docker stop $SURREAL_CONTAINER
+      - run: docker commit $SURREAL_CONTAINER flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
       - run: docker exec surreal du -hs *
       - run: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - run: docker push flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
