@@ -34,6 +34,6 @@ jobs:
       - run: python migrate.py
       - run: docker ps
       - run: docker commit surreal flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
-      - run: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" -password-stdin
+      - run: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - run: docker push flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
       
