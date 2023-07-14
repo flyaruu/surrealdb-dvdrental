@@ -14,9 +14,6 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: mysecretpassword
           POSTGRES_DATABASE: dvdrental          
-      - image: surrealdb/surrealdb:latest
-        name: surreal
-        command: start --log warn --user root --pass root
       - image: floodplain/dvdrental:latest
         name: postgres
         environment:
@@ -34,6 +31,7 @@ jobs:
       - run: python migrate.py
       - run: docker stop surreal
       - run: docker commit surreal flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
+      - run: docker exec surreal du -hs *
       - run: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - run: docker push flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
       - run: docker tag flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1} flyaruu/surrealdb-dvdrental:latest
