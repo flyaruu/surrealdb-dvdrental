@@ -32,11 +32,11 @@ jobs:
       - run: docker ps -a
       - run: docker ps -q
       - run: python migrate.py
-      - run: echo 'export SURREAL_CONTAINER="$(docker ps | grep surrealdb:latest |  awk '{ print $1 }')"' >> $BASH_ENV
-      - run: docker stop $SURREAL_CONTAINER
-      - run: docker commit $SURREAL_CONTAINER flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
-      - run: docker exec surreal du -hs *
-      - run: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-      - run: docker push flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
-      - run: docker tag flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1} flyaruu/surrealdb-dvdrental:latest
-      - run: docker push flyaruu/surrealdb-dvdrental:latest
+      - run: |
+          export SURREAL_CONTAINER="$(docker ps | grep surrealdb:latest |  awk '{ print $1 }')"
+          docker stop $SURREAL_CONTAINER
+          docker commit $SURREAL_CONTAINER flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
+          echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          docker push flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
+          docker tag flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1} flyaruu/surrealdb-dvdrental:latest
+          docker push flyaruu/surrealdb-dvdrental:latest
