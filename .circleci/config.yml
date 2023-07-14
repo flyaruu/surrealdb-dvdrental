@@ -32,7 +32,7 @@ jobs:
       - run: docker ps -a
       - run: docker ps -q
       - run: python migrate.py
-      - run: export SURREAL_CONTAINER=$(docker ps | grep surrealdb:latest |  awk '{ print $1 }')
+      - run: echo 'export SURREAL_CONTAINER="$(docker ps | grep surrealdb:latest |  awk '{ print $1 }')"' >> $BASH_ENV
       - run: docker stop $SURREAL_CONTAINER
       - run: docker commit $SURREAL_CONTAINER flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}
       - run: docker exec surreal du -hs *
