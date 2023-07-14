@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: cimg/python:3.11.4
         environment:
-          SURREAL_URL: ws://surreal:8000/rpc
+          SURREAL_URL: ws://localhost:8000/rpc
           SURREAL_USER: root
           SURREAL_PASSWORD: root
           SURREAL_NAMESPACE: myns
