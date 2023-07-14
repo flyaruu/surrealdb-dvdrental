@@ -28,6 +28,8 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pip install pylint
       - run: pylint --fail-under=8 migrate.py
+      - run: docker ps -a
+      - run: docker ps -q
       - run: python migrate.py
       - run: docker stop surreal
       - run: docker commit surreal flyaruu/surrealdb-dvdrental:${CIRCLE_SHA1}

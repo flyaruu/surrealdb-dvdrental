@@ -6,7 +6,6 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from surrealdb import Surreal
 from dotenv import load_dotenv
-from dotenv import dotenv_values
 
 async def import_tables():
     """migrate database from pg to surreal"""
