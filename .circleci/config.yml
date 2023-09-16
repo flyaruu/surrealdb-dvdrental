@@ -20,7 +20,7 @@ jobs:
           POSTGRES_PASSWORD: mysecretpassword
       - image: surrealdb/surrealdb:latest
         name: surreal
-        command: start --log trace --user root --pass root file://database.db
+        command: start --log trace --user root --pass root file:///tmp/database.db
     steps:
       - setup_remote_docker:
           version: 20.10.14
